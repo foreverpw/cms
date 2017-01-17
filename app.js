@@ -13,10 +13,7 @@ var app = express();
 var whitelist = ['http://localhost:9000']
 var corsOptions = {
   credentials:true,
-  origin: function (origin, callback) {
-    var originIsWhitelisted = whitelist.indexOf(origin) !== -1
-    callback(originIsWhitelisted ? null : 'Bad Request', originIsWhitelisted)
-  }
+  origin: whitelist
 }
 app.use(cors(corsOptions))
 //Access-Control-Allow-Credentials

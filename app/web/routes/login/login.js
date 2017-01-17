@@ -12,4 +12,13 @@ router.get('/', function(req, res, next) {
   }
 });
 
+router.get('/get/:id', async function(req, res, next) {
+  try {
+    var data = await loginService.getUserInfo(req.params.id,req.session);
+    res.send(data)
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
