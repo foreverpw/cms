@@ -49,4 +49,35 @@ const helper = {
   }
 }
 
+helper.transactional = function (target, name, descriptor) {
+  let originMethod = descriptor.value;
+  let newMethod = async function () {
+    //get connect and start transaction
+    try {
+      var connection = await helper.startTransaction();
+      var arr = Array.from(arguments)
+      arr.push(connection)
+      var result = await originMethod.apply(target, arr)
+
+      //commit
+      connection.commit(function (err) {
+        if (err) {
+          connection.rollback(function () {
+            throw err;
+          });
+        }
+      })
+
+      return result;
+    } catch (error) {
+      connection.rollback();
+      throw error
+    } finally {
+      connection.release()
+    }
+  }
+  descriptor.value = newMethod;
+  return descriptor;
+}
+
 module.exports = helper;

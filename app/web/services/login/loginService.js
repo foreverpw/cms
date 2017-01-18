@@ -1,25 +1,12 @@
 const userDao = require('../../dao/userDao/userDao')
-const dbHelper = require('../../dao/dbHelper')
+const transactional = require('../../dao/dbHelper').transactional
 
-var service = {
-  login (username,password,session) {
-    if(session.user){
-      return session.user;
-    }
-    var user = userDao.getUser()
-    if(user){
-      session.user = user;
-      return user
-    }
-    return null
+class LoginService {
+  @transactional
+  async getUserInfo(userId,session,connection){
+    var user = await userDao.queryById(userId,connection);
+    return user
   }
 }
 
-async function getUserInfo(userId,session,connection){
-    var user = await userDao.queryById(userId,connection);
-    return user
-}
-
-service.getUserInfo = dbHelper.transactionProxy(getUserInfo,service)
-
-module.exports = service
+module.exports = LoginService
