@@ -1,7 +1,10 @@
 var mysql = require('mysql');
 var $conf = require('../conf/db');
+var asyncLocal = require('continuation-local-storage');
 
 var pool = mysql.createPool($conf.mysql);
+var connectionLocal = asyncLocal.createNamespace('connectionLocal');
+var connectionName = 'connection';
 
 const helper = {
   startTransaction() {
@@ -17,35 +20,6 @@ const helper = {
         })
       })
     })
-  },
-  transactionProxy(fn, context) {
-    var context = context || this;
-    var manage = this;
-    return async function () {
-      //get connect and start transaction
-      try {
-        var connection = await manage.startTransaction();
-        var arr = Array.from(arguments)
-        arr.push(connection)
-        var result = await fn.apply(context, arr)
-
-        //commit
-        connection.commit(function (err) {
-          if (err) {
-            connection.rollback(function () {
-              throw err;
-            });
-          }
-        })
-
-        return result;
-      } catch (error) {
-        connection.rollback();
-        throw error
-      } finally {
-        connection.release()
-      }
-    }
   }
 }
 
@@ -54,7 +28,10 @@ helper.transactional = function (target, name, descriptor) {
   let newMethod = async function () {
     //get connect and start transaction
     try {
+      let context = connectionLocal.createContext();
+      connectionLocal.enter(context);
       var connection = await helper.startTransaction();
+      connectionLocal.set(connectionName, connection);
       var arr = Array.from(arguments)
       arr.push(connection)
       var result = await originMethod.apply(target, arr)
@@ -77,6 +54,13 @@ helper.transactional = function (target, name, descriptor) {
     }
   }
   descriptor.value = newMethod;
+  return descriptor;
+}
+
+helper.connection = function (target, name, descriptor){
+  descriptor.get = function() {
+    return connectionLocal.get(connectionName);
+  }
   return descriptor;
 }
 
