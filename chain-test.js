@@ -1,29 +1,39 @@
-var threadLocal = require('continuation-local-storage');
-// var connectionLocal = threadLocal.createNamespace('db connection local');
-threadLocal.createNamespace('db connection local');
+var cls = require('continuation-local-storage');
+var co = require('co');
+var ns = cls.createNamespace('test');
 
-setTimeout(function() {
-    var connectionLocal = threadLocal.getNamespace('db connection local')
-    connectionLocal.run(function() {
-        connectionLocal.set('connection', {id:1});
-        setTimeout(function() {
-            console.log('thread1:'+connectionLocal.get('connection').id)
-            setTimeout(function() {
-                console.log('thread1-2:'+connectionLocal.get('connection').id)
-                setTimeout(function() {
-                    console.log('thread1-3:'+connectionLocal.get('connection').id)
-                }, 1000);
-            }, 1000);
-        }, 1000);
-    })
-}, 500);
+var Promise = require('bluebird');
+var clsBluebird = require('cls-bluebird');
+ 
+clsBluebird( ns );
 
-setTimeout(function() {
-    var connectionLocal = threadLocal.getNamespace('db connection local')
-    connectionLocal.run(function() {
-        connectionLocal.set('connection', {id:2});
-        setTimeout(function() {
-            console.log('thread2:'+connectionLocal.get('connection').id)
-        }, 1000);
+
+function log(index){
+    return new Promise(function (resolve, reject){
+         console.log('cid:'+ns.get('cid')+',index:'+index)
+         resolve()
     })
-}, 1000);
+}
+
+async function afn(){
+    var a1 = await log(1)
+    var a1 = await log(2)
+}
+
+function* gen(){
+    var a1 = yield log(1)
+    var a2 = yield log(2)
+}
+
+function newP(id){
+    Promise.resolve().then((data)=>{
+        ns.run(function(){
+            ns.set('cid',id)
+            // co(gen);
+            co(afn)
+        })
+    })
+}
+
+newP(1);
+newP(2);

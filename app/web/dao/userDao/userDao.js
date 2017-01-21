@@ -1,4 +1,5 @@
-const connection = require('../../dao/dbHelper').connection
+var Promise = require('bluebird');
+var connection = require('../../dao/dbHelper').connection
 
 const sqls = {
   insert: 'INSERT INTO user(id, name, age) VALUES(0,?,?)',
@@ -22,6 +23,8 @@ class UserDao {
   add (name, age) {
     var self = this;
     return new Promise(function (resolve, reject) {
+      debugger;
+      console.log(name+':'+self.connection.cid);
       if(name == 'daxianyu' && age == 12){
         return reject(new Error('daxianyu forbidden'))
       }

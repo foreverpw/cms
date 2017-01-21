@@ -25,6 +25,7 @@ router.get('/get/:id', async function(req, res, next) {
 
 router.get('/add/:name', async function(req, res, next) {
   try {
+    loginService.addUsers('wpw',req.session);
     var data = await loginService.addUsers(req.params.name,req.session);
     res.send(data)
   } catch (error) {

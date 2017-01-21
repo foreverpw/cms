@@ -6,6 +6,10 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var session = require('express-session');
+var $conf = require('./app/web/conf/db');
+var db = require('./app/web/dao/dbHelper');
+
+db.init($conf.mysql)
 
 var app = express();
 
